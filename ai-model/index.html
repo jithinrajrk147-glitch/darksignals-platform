@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DarkSignals AI Chat Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            height: 90vh;
+            background: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(100, 200, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, rgba(100, 200, 255, 0.1), rgba(50, 150, 255, 0.1));
+            padding: 20px;
+            border-bottom: 1px solid rgba(100, 200, 255, 0.2);
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, #64c8ff, #3296ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chat-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-area::-webkit-scrollbar-track {
+            background: rgba(100, 200, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .chat-area::-webkit-scrollbar-thumb {
+            background: rgba(100, 200, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .chat-area::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 200, 255, 0.5);
+        }
+
+        .message {
+            animation: slideIn 0.3s ease-out;
+            display: flex;
+            gap: 10px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-message {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .user-message .message-content {
+            background: linear-gradient(135deg, rgba(100, 200, 255, 0.3), rgba(50, 150, 255, 0.3));
+            border: 1px solid rgba(100, 200, 255, 0.4);
+            color: #fff;
+            border-radius: 12px 0 12px 12px;
+        }
+
+        .ai-message {
+            justify-content: flex-start;
+        }
+
+        .ai-message .message-content {
+            background: rgba(60, 100, 150, 0.2);
+            border: 1px solid rgba(100, 150, 200, 0.3);
+            color: #d0d0e0;
+            border-radius: 0 12px 12px 12px;
+        }
+
+        .timestamp {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .loading-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(100, 200, 255, 0.6);
+            animation: bounce 1.4s infinite;
+        }
+
+        .loading-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% {
+                opacity: 0.3;
+                transform: translateY(0);
+            }
+            40% {
+                opacity: 1;
+                transform: translateY(-10px);
+            }
+        }
+
+        .input-area {
+            background: rgba(15, 15, 30, 0.5);
+            padding: 20px;
+            border-top: 1px solid rgba(100, 200, 255, 0.2);
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            background: rgba(60, 80, 120, 0.2);
+            border: 1px solid rgba(100, 200, 255, 0.3);
+            border-radius: 25px;
+            padding: 0 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-wrapper:focus-within {
+            background: rgba(60, 80, 120, 0.4);
+            border-color: rgba(100, 200, 255, 0.6);
+            box-shadow: 0 0 15px rgba(100, 200, 255, 0.2);
+        }
+
+        #messageInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            padding: 12px 0;
+            font-size: 14px;
+            outline: none;
+        }
+
+        #messageInput::placeholder {
+            color: #666;
+        }
+
+        #sendBtn {
+            background: linear-gradient(135deg, rgba(100, 200, 255, 0.4), rgba(50, 150, 255, 0.4));
+            border: 1px solid rgba(100, 200, 255, 0.5);
+            color: #64c8ff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        #sendBtn:hover {
+            background: linear-gradient(135deg, rgba(100, 200, 255, 0.6), rgba(50, 150, 255, 0.6));
+            border-color: rgba(100, 200, 255, 0.8);
+            box-shadow: 0 0 15px rgba(100, 200, 255, 0.3);
+        }
+
+        #sendBtn:active {
+            transform: scale(0.95);
+        }
+
+        #sendBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .welcome-message h2 {
+            color: #64c8ff;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+
+        .welcome-message p {
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .features-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .feature-item {
+            background: rgba(100, 200, 255, 0.1);
+            border: 1px solid rgba(100, 200, 255, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #a0a0d0;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            background: rgba(100, 200, 255, 0.2);
+            border: 1px solid rgba(100, 200, 255, 0.4);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-top: 8px;
+        }
+
+        .error-message {
+            background: rgba(255, 100, 100, 0.2);
+            border: 1px solid rgba(255, 100, 100, 0.4);
+            color: #ff9090;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .message-content {
+                max-width: 85% !important;
+                font-size: 13px;
+            }
+
+            .features-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 DarkSignals AI Chat</h1>
+            <p>Powered by Advanced AI Model with Wikipedia Integration</p>
+        </div>
+
+        <div class="chat-area" id="chatArea">
+            <div class="welcome-message">
+                <h2>Welcome to DarkSignals AI</h2>
+                <p>Ask me anything! I can help with:</p>
+                <div class="features-list">
+                    <div class="feature-item">💡 Answer Questions</div>
+                    <div class="feature-item">📚 Grammar Validation</div>
+                    <div class="feature-item">📊 Text Analysis</div>
+                    <div class="feature-item">🔍 Entity Recognition</div>
+                    <div class="feature-item">😊 Sentiment Analysis</div>
+                    <div class="feature-item">🧠 Memory & Context</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="Ask me anything... (e.g., 'What is artificial intelligence?')"
+                    autocomplete="off"
+                >
+            </div>
+            <button id="sendBtn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Mock AI Model Implementation
+        // In production, integrate with actual ai-model/core/AIModel.js
+        
+        class MockAIModel {
+            constructor() {
+                this.conversationHistory = [];
+                this.responses = {
+                    'what is artificial intelligence': 'Artificial Intelligence (AI) is the simulation of human intelligence processes by computers. This includes learning, reasoning, problem-solving, perception, and language understanding. AI systems can learn from data and improve over time.',
+                    'what is machine learning': 'Machine Learning is a subset of AI that focuses on systems learning from data without being explicitly programmed. It uses algorithms to identify patterns and make predictions based on training data.',
+                    'what is deep learning': 'Deep Learning uses artificial neural networks with multiple layers (hence "deep") to learn from large amounts of data. It powers many modern AI applications including image recognition, language processing, and more.',
+                    'what is nlp': 'Natural Language Processing (NLP) is a branch of AI that focuses on enabling computers to understand, interpret, and generate human language in a meaningful and useful way.',
+                    'what is grammar': 'Grammar is a system of rules governing the structure and use of language. It includes rules for syntax (word order), morphology (word structure), and other linguistic elements.',
+                    'default': 'That\'s an interesting question! Based on my knowledge, I can tell you that this is a complex topic. Feel free to ask more specific questions about AI, machine learning, or any other topic you\'re interested in learning about.'
+                };
+            }
+
+            async askQuestion(question) {
+                // Simulate processing delay
+                await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 400));
+                
+                const lowerQuestion = question.toLowerCase();
+                const answer = this.responses[lowerQuestion] || this.responses['default'];
+                
+                const response = {
+                    success: true,
+                    answer: answer,
+                    confidence: 0.85 + Math.random() * 0.1,
+                    sources: ['Internal Knowledge Base', 'Wikipedia Integration'],
+                    timestamp: new Date()
+                };
+                
+                this.conversationHistory.push({
+                    question: question,
+                    answer: answer,
+                    timestamp: response.timestamp
+                });
+                
+                return response;
+            }
+
+            validateGrammar(text) {
+                const corrections = [];
+                if (text.includes('its ') && !text.includes('it\'s')) corrections.push('its → it\'s');
+                if (text.includes('their ') && !text.includes('they\'re')) corrections.push('their → they\'re');
+                return {
+                    isCorrect: corrections.length === 0,
+                    corrections: corrections,
+                    suggestions: corrections.map(c => `Did you mean "${c}"?`)
+                };
+            }
+        }
+
+        const aiModel = new MockAIModel();
+        const chatArea = document.getElementById('chatArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        function addMessage(text, isUser = false, metadata = null) {
+            if (chatArea.querySelector('.welcome-message')) {
+                chatArea.querySelector('.welcome-message').remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            let html = text;
+            if (metadata && metadata.confidence) {
+                html += `<div class="confidence-badge">Confidence: ${(metadata.confidence * 100).toFixed(0)}%</div>`;
+            }
+            
+            contentDiv.innerHTML = html;
+            messageDiv.appendChild(contentDiv);
+
+            const timestampDiv = document.createElement('div');
+            timestampDiv.className = 'timestamp';
+            timestampDiv.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            messageDiv.appendChild(timestampDiv);
+
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function addLoadingIndicator() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai-message';
+            messageDiv.id = 'loadingIndicator';
+
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-indicator';
+            loadingDiv.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>';
+
+            messageDiv.appendChild(loadingDiv);
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function removeLoadingIndicator() {
+            const loading = document.getElementById('loadingIndicator');
+            if (loading) loading.remove();
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            messageInput.value = '';
+            sendBtn.disabled = true;
+            addMessage(message, true);
+            addLoadingIndicator();
+
+            try {
+                const response = await aiModel.askQuestion(message);
+                removeLoadingIndicator();
+                addMessage(response.answer, false, { confidence: response.confidence });
+            } catch (error) {
+                removeLoadingIndicator();
+                addMessage(`Error: ${error.message}`, false);
+            }
+
+            sendBtn.disabled = false;
+            messageInput.focus();
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Focus input on load
+        messageInput.focus();
+    </script>
+</body>
+</html>
